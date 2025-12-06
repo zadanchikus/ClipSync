@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClipSync Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #171717; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #444; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-neutral-950 text-neutral-200 font-sans min-h-screen flex flex-col">
+
+    <!-- HEADER -->
+    <header class="bg-neutral-900 border-b border-neutral-800 p-4 sticky top-0 z-20 shadow-lg">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                    <svg class="text-amber-500 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white leading-none tracking-tight">ClipSync</h1>
+                    <span class="text-[10px] text-amber-500 font-bold uppercase tracking-widest">Standalone</span>
+                </div>
+            </div>
+            <div id="status-badge" class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-red-900/20 text-red-500 border border-red-900/30 flex items-center gap-2">
+                <div id="status-dot" class="w-2 h-2 rounded-full bg-red-500"></div>
+                <span id="status-text">DISCONNECTED</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="flex-1 w-full max-w-4xl mx-auto p-4 md:p-6 flex flex-col gap-6">
+        
+        <!-- SETTINGS PANEL -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-end">
+            <div class="flex-1 w-full">
+                <label class="text-xs font-bold text-neutral-500 uppercase block mb-1">Server Address</label>
+                <input id="server-url" type="text" value="ws://localhost:4000" class="w-full bg-black border border-neutral-800 rounded-lg p-2.5 text-amber-500 font-mono text-sm focus:border-amber-500 outline-none transition-colors" placeholder="ws://192.168.1.X:4000">
+            </div>
+            <div class="flex-1 w-full">
+                <label class="text-xs font-bold text-neutral-500 uppercase block mb-1">Device Name</label>
+                <input id="device-name" type="text" class="w-full bg-black border border-neutral-800 rounded-lg p-2.5 text-white text-sm focus:border-amber-500 outline-none transition-colors" placeholder="My Device">
+            </div>
+            <button onclick="connect()" class="w-full md:w-auto bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-2.5 px-6 rounded-lg transition-colors border border-neutral-700">
+                Connect
+            </button>
+        </div>
+
+        <!-- EDITOR -->
+        <div class="flex-1 flex flex-col gap-2">
+            <div class="relative flex-1 bg-[#0f0f0f] border-2 border-neutral-800 rounded-2xl overflow-hidden group focus-within:border-amber-900/50 transition-colors">
+                <textarea id="editor" class="w-full h-full bg-transparent p-6 text-lg text-neutral-200 resize-none focus:outline-none font-mono leading-relaxed z-10 relative" placeholder="Type here to sync..."></textarea>
+                
+                <!-- Toolbar -->
+                <div class="absolute bottom-4 right-4 flex gap-2 z-10">
+                    <button onclick="copyText()" class="bg-neutral-900/80 hover:bg-neutral-800 text-neutral-300 p-3 rounded-xl border border-neutral-800 transition-colors backdrop-blur" title="Copy">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                    </button>
+                    <button onclick="sendText()" class="bg-amber-500 hover:bg-amber-400 text-black font-bold p-3 rounded-xl shadow-lg transition-transform active:scale-95" title="Send">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    </button>
+                </div>
+            </div>
+            <p class="text-center text-xs text-neutral-600 font-mono">Changes sync automatically</p>
+        </div>
+
+        <!-- HISTORY -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden flex flex-col max-h-64">
+            <div class="p-3 border-b border-neutral-800 bg-neutral-900/50 flex justify-between items-center">
+                <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-widest">History</h2>
+                <button onclick="clearHistory()" class="text-xs text-red-400 hover:underline">Clear</button>
+            </div>
+            <div id="history-list" class="flex-1 overflow-y-auto p-2 space-y-2">
+                <!-- Items injected here -->
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- STATE ---
+        let ws = null;
+        let myName = localStorage.getItem('clipsync_name') || 'Device-' + Math.floor(Math.random()*1000);
+        let serverUrl = localStorage.getItem('clipsync_url') || 'ws://localhost:4000';
+        let history = JSON.parse(localStorage.getItem('clipsync_history') || '[]');
+
+        // --- DOM ELEMENTS ---
+        const els = {
+            editor: document.getElementById('editor'),
+            serverUrl: document.getElementById('server-url'),
+            deviceName: document.getElementById('device-name'),
+            statusBadge: document.getElementById('status-badge'),
+            statusDot: document.getElementById('status-dot'),
+            statusText: document.getElementById('status-text'),
+            historyList: document.getElementById('history-list')
+        };
+
+        // --- INIT ---
+        els.deviceName.value = myName;
+        els.serverUrl.value = serverUrl;
+        renderHistory();
+        connect();
+
+        // --- EVENTS ---
+        els.editor.addEventListener('input', (e) => {
+            // Optional: Auto-send on type (debounced)
+            // For now, let's stick to manual send button or basic debounce
+        });
+
+        els.deviceName.addEventListener('change', (e) => {
+            myName = e.target.value;
+            localStorage.setItem('clipsync_name', myName);
+        });
+
+        els.serverUrl.addEventListener('change', (e) => {
+            serverUrl = e.target.value;
+            localStorage.setItem('clipsync_url', serverUrl);
+        });
+
+        // --- WEBSOCKET ---
+        function connect() {
+            if (ws) ws.close();
+            
+            updateStatus('CONNECTING');
+            try {
+                ws = new WebSocket(els.serverUrl.value);
+            } catch (e) {
+                updateStatus('DISCONNECTED');
+                return;
+            }
+
+            ws.onopen = () => updateStatus('CONNECTED');
+            ws.onclose = () => updateStatus('DISCONNECTED');
+            ws.onerror = () => updateStatus('DISCONNECTED');
+            
+            ws.onmessage = async (event) => {
+                let text = "";
+                if (event.data instanceof Blob) {
+                    text = await event.data.text();
+                } else {
+                    text = String(event.data);
+                }
+
+                try {
+                    const msg = JSON.parse(text);
+                    if (msg.sender !== myName) {
+                        els.editor.value = msg.payload;
+                        addToHistory(msg.payload, msg.sender, false);
+                    }
+                } catch (e) {
+                    console.warn("Received raw text");
+                }
+            };
+        }
+
+        // --- FUNCTIONS ---
+        function sendText() {
+            const text = els.editor.value;
+            if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+            const msg = {
+                type: 'text',
+                payload: text,
+                sender: myName,
+                timestamp: Date.now()
+            };
+
+            ws.send(JSON.stringify(msg));
+            addToHistory(text, myName, true);
+        }
+
+        function addToHistory(content, sender, isSelf) {
+            const item = { content, sender, isSelf, timestamp: Date.now() };
+            history.unshift(item);
+            if (history.length > 20) history.pop();
+            localStorage.setItem('clipsync_history', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            els.historyList.innerHTML = history.map(item => `
+                <div class="bg-neutral-900/50 border border-neutral-800 rounded-lg p-3 fade-in">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] font-bold px-1.5 rounded ${item.isSelf ? 'bg-neutral-800 text-neutral-400' : 'bg-amber-900/30 text-amber-500'}">
+                            ${item.sender}
+                        </span>
+                        <span class="text-[10px] text-neutral-600">${new Date(item.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                    <div class="text-sm text-neutral-300 font-mono truncate cursor-pointer hover:text-white" onclick="restore('${item.content.replace(/'/g, "\\'")}')">
+                        ${item.content}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function restore(text) {
+            els.editor.value = text;
+        }
+
+        function clearHistory() {
+            history = [];
+            localStorage.setItem('clipsync_history', '[]');
+            renderHistory();
+        }
+
+        function copyText() {
+            navigator.clipboard.writeText(els.editor.value);
+            alert("Copied!");
+        }
+
+        function updateStatus(status) {
+            if (status === 'CONNECTED') {
+                els.statusBadge.className = "px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-900/20 text-emerald-500 border border-emerald-900/30 flex items-center gap-2";
+                els.statusDot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                els.statusText.innerText = "CONNECTED";
+            } else if (status === 'CONNECTING') {
+                els.statusBadge.className = "px-3 py-1 rounded-full text-xs font-mono font-bold bg-yellow-900/20 text-yellow-500 border border-yellow-900/30 flex items-center gap-2";
+                els.statusDot.className = "w-2 h-2 rounded-full bg-yellow-500 animate-bounce";
+                els.statusText.innerText = "CONNECTING...";
+            } else {
+                els.statusBadge.className = "px-3 py-1 rounded-full text-xs font-mono font-bold bg-red-900/20 text-red-500 border border-red-900/30 flex items-center gap-2";
+                els.statusDot.className = "w-2 h-2 rounded-full bg-red-500";
+                els.statusText.innerText = "DISCONNECTED";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "name": "ClipSync",
+  "description": "A cross-platform universal clipboard sync application dashboard and server code generator.",
+  "requestFramePermissions": []
+}

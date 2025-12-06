@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Client</title>
+    <style>body{background:#111;color:#eee;font-family:monospace;padding:20px}input,button{padding:8px}</style>
+</head>
+<body>
+    <h3>ClipSync Debugger</h3>
+    <input id="in" placeholder="Type JSON..." style="width:300px">
+    <button onclick="send()">Send</button>
+    <pre id="out"></pre>
+    <script>
+        const ws = new WebSocket("ws://192.168.50.131:4000");
+        ws.onmessage = async (e) => {
+            const txt = e.data instanceof Blob ? await e.data.text() : e.data;
+            document.getElementById('out').innerText += '\n' + txt;
+        };
+        function send() {
+            ws.send(document.getElementById('in').value);
+        }
+    </script>
+</body>
+</html>
